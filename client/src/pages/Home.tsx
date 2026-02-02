@@ -7,12 +7,14 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function Home() {
   const { mutate: submitFeedback, isPending } = useSubmitFeedback();
   const [showSuccess, setShowSuccess] = useState(false);
+  const [lastVariant, setLastVariant] = useState<string | null>(null);
 
   // Auto-hide success message after 3 seconds
   useEffect(() => {
     if (showSuccess) {
       const timer = setTimeout(() => {
         setShowSuccess(false);
+        setLastVariant(null);
       }, 3000);
       return () => clearTimeout(timer);
     }
@@ -20,11 +22,33 @@ export default function Home() {
 
   const handleVote = (satisfaction: string) => {
     if (isPending || showSuccess) return;
+    setLastVariant(satisfaction);
     submitFeedback(satisfaction, {
       onSuccess: () => {
         setShowSuccess(true);
       },
+      onError: () => {
+        setLastVariant(null);
+      }
     });
+  };
+
+  const getSuccessStyles = () => {
+    switch (lastVariant) {
+      case "muito_satisfeito":
+        return "bg-[hsl(var(--feedback-happy))] text-white";
+      case "satisfeito":
+        return "bg-[hsl(var(--feedback-neutral))] text-white";
+      case "insatisfeito":
+        return "bg-[hsl(var(--feedback-sad))] text-white";
+      default:
+        return "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400";
+    }
+  };
+
+  const getSuccessIconStyles = () => {
+    if (lastVariant) return "text-white";
+    return "text-green-600 dark:text-green-400";
   };
 
   return (
@@ -45,8 +69,8 @@ export default function Home() {
             exit={{ opacity: 0, scale: 0.8 }}
             className="flex flex-col items-center justify-center text-center space-y-8 z-10"
           >
-            <div className="w-32 h-32 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-              <CheckCircle2 className="w-16 h-16 text-green-600 dark:text-green-400" />
+            <div className={`w-32 h-32 rounded-full flex items-center justify-center transition-colors duration-500 ${getSuccessStyles()}`}>
+              <CheckCircle2 className={`w-16 h-16 transition-colors duration-500 ${getSuccessIconStyles()}`} />
             </div>
             <div className="space-y-2">
               <h1 className="text-5xl md:text-6xl font-display font-bold text-foreground">
