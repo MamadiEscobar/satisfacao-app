@@ -53,7 +53,8 @@ export async function registerRoutes(
   // Stats (Admin only)
   app.get(api.feedback.stats.path, requireAuth, async (req, res) => {
     const date = req.query.date as string | undefined;
-    const stats = await storage.getFeedbackStats(date);
+    const compareDate = req.query.compareDate as string | undefined;
+    const stats = await storage.getFeedbackStats(date, compareDate);
     res.json(stats);
   });
 

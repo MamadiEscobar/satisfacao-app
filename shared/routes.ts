@@ -34,12 +34,18 @@ export const api = {
       path: '/api/feedback/stats',
       input: z.object({
         date: z.string().optional(),
+        compareDate: z.string().optional(),
       }).optional(),
       responses: {
         200: z.object({
           totals: z.record(z.number()),
           percentages: z.record(z.number()),
           total: z.number(),
+          comparison: z.object({
+            date: z.string(),
+            totals: z.record(z.number()),
+            total: z.number(),
+          }).optional(),
         }),
       },
     },

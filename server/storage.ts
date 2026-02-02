@@ -5,7 +5,7 @@ import { eq, desc, sql, count, and } from "drizzle-orm";
 export interface IStorage {
   createFeedback(feedback: InsertFeedback): Promise<Feedback>;
   getFeedbackList(page: number, limit: number, date?: string): Promise<{ items: Feedback[], total: number }>;
-  getFeedbackStats(date?: string): Promise<{ totals: Record<string, number>, percentages: Record<string, number>, total: number }>;
+  getFeedbackStats(date?: string, compareDate?: string): Promise<{ totals: Record<string, number>, percentages: Record<string, number>, total: number, comparison?: { date: string, totals: Record<string, number>, total: number } }>;
   getAllFeedback(date?: string): Promise<Feedback[]>;
 }
 
@@ -21,7 +21,6 @@ export class DatabaseStorage implements IStorage {
   async getFeedbackList(page: number, limit: number, date?: string): Promise<{ items: Feedback[], total: number }> {
     let whereClause = undefined;
     if (date) {
-      // Assuming date is YYYY-MM-DD, filter by day
       whereClause = sql`DATE(${feedback.createdAt}) = ${date}`;
     }
 
@@ -55,41 +54,57 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(feedback.createdAt));
   }
 
-  async getFeedbackStats(date?: string): Promise<{ totals: Record<string, number>, percentages: Record<string, number>, total: number }> {
-    let whereClause = undefined;
-    if (date) {
-      whereClause = sql`DATE(${feedback.createdAt}) = ${date}`;
-    }
+  async getFeedbackStats(date?: string, compareDate?: string): Promise<{ totals: Record<string, number>, percentages: Record<string, number>, total: number, comparison?: { date: string, totals: Record<string, number>, total: number } }> {
+    const getStats = async (d?: string) => {
+      let whereClause = undefined;
+      if (d) {
+        whereClause = sql`DATE(${feedback.createdAt}) = ${d}`;
+      }
 
-    const rows = await db
-      .select({
-        satisfaction: feedback.satisfaction,
-        count: count(),
-      })
-      .from(feedback)
-      .where(whereClause)
-      .groupBy(feedback.satisfaction);
+      const rows = await db
+        .select({
+          satisfaction: feedback.satisfaction,
+          count: count(),
+        })
+        .from(feedback)
+        .where(whereClause)
+        .groupBy(feedback.satisfaction);
 
-    const totals: Record<string, number> = {
-      muito_satisfeito: 0,
-      satisfeito: 0,
-      insatisfeito: 0,
+      const totals: Record<string, number> = {
+        muito_satisfeito: 0,
+        satisfeito: 0,
+        insatisfeito: 0,
+      };
+
+      let total = 0;
+      for (const row of rows) {
+        if (row.satisfaction in totals) {
+          totals[row.satisfaction] = Number(row.count);
+          total += Number(row.count);
+        }
+      }
+
+      const percentages: Record<string, number> = {};
+      for (const key in totals) {
+        percentages[key] = total > 0 ? (totals[key] / total) * 100 : 0;
+      }
+
+      return { totals, percentages, total };
     };
 
-    let total = 0;
-    for (const row of rows) {
-      if (row.satisfaction in totals) {
-        totals[row.satisfaction] = Number(row.count);
-        total += Number(row.count);
-      }
+    const mainStats = await getStats(date);
+    let comparison = undefined;
+
+    if (compareDate) {
+      const compStats = await getStats(compareDate);
+      comparison = {
+        date: compareDate,
+        totals: compStats.totals,
+        total: compStats.total,
+      };
     }
 
-    const percentages: Record<string, number> = {};
-    for (const key in totals) {
-      percentages[key] = total > 0 ? (totals[key] / total) * 100 : 0;
-    }
-
-    return { totals, percentages, total };
+    return { ...mainStats, comparison };
   }
 }
 

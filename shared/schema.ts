@@ -27,4 +27,9 @@ export type FeedbackStats = {
     insatisfeito: number;
   };
   total: number;
+  comparison?: {
+    date: string;
+    totals: Record<string, number>;
+    total: number;
+  };
 };

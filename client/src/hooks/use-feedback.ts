@@ -26,13 +26,16 @@ export function useSubmitFeedback() {
   });
 }
 
-export function useFeedbackStats(date?: string) {
+export function useFeedbackStats(date?: string, compareDate?: string) {
   return useQuery({
-    queryKey: [api.feedback.stats.path, date],
+    queryKey: [api.feedback.stats.path, date, compareDate],
     queryFn: async () => {
       const url = buildUrl(api.feedback.stats.path);
-      const searchParams = date ? `?date=${date}` : "";
-      const res = await fetch(url + searchParams, { credentials: "include" });
+      const params = new URLSearchParams();
+      if (date) params.append("date", date);
+      if (compareDate) params.append("compareDate", compareDate);
+      
+      const res = await fetch(`${url}?${params.toString()}`, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch stats");
       return api.feedback.stats.responses[200].parse(await res.json());
     },
