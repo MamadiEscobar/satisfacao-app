@@ -93,33 +93,23 @@ export async function registerRoutes(
     stream.end();
   });
 
-  // Export Excel (Admin only)
-  app.get(api.feedback.exportXlsx.path, requireAuth, async (req, res) => {
+  // Export TXT (Admin only)
+  app.get(api.feedback.exportTxt.path, requireAuth, async (req, res) => {
     const date = req.query.date as string | undefined;
     const items = await storage.getAllFeedback(date);
 
-    const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet('Feedback');
-    
-    sheet.columns = [
-      { header: 'ID', key: 'id', width: 10 },
-      { header: 'Satisfaction', key: 'satisfaction', width: 20 },
-      { header: 'Date/Time', key: 'createdAt', width: 30 },
-    ];
+    res.setHeader('Content-Type', 'text/plain');
+    res.setHeader('Content-Disposition', 'attachment; filename="feedback.txt"');
 
+    let content = "ID\tSatisfação\tData/Hora\n";
+    content += "--------------------------------------------------\n";
+    
     for (const item of items) {
-      sheet.addRow({
-        id: item.id,
-        satisfaction: item.satisfaction,
-        createdAt: item.createdAt.toISOString(),
-      });
+      const dateStr = item.createdAt.toISOString();
+      content += `${item.id}\t${item.satisfaction}\t${dateStr}\n`;
     }
 
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename="feedback.xlsx"');
-
-    await workbook.xlsx.write(res);
-    res.end();
+    res.send(content);
   });
 
   return httpServer;

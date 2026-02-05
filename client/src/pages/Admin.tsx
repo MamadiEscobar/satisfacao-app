@@ -147,8 +147,8 @@ export default function Admin() {
               </a>
             </Button>
             <Button variant="outline" size="sm" asChild className="gap-2">
-              <a href={getExportUrl('xlsx', date || undefined)} download>
-                <FileSpreadsheet className="w-4 h-4" /> Excel
+              <a href={getExportUrl('txt', date || undefined)} download>
+                <FileText className="w-4 h-4" /> TXT
               </a>
             </Button>
           </div>

@@ -62,8 +62,8 @@ export function useFeedbackList(page = 1, limit = 20, date?: string) {
   });
 }
 
-export function getExportUrl(type: 'csv' | 'xlsx', date?: string) {
-  const path = type === 'csv' ? api.feedback.exportCsv.path : api.feedback.exportXlsx.path;
+export function getExportUrl(type: 'csv' | 'txt', date?: string) {
+  const path = type === 'csv' ? api.feedback.exportCsv.path : api.feedback.exportTxt.path;
   const params = date ? `?date=${date}` : '';
   return path + params;
 }

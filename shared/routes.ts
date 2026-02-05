@@ -57,9 +57,9 @@ export const api = {
         200: z.any(), // File download
       },
     },
-    exportXlsx: {
+    exportTxt: {
       method: 'GET' as const,
-      path: '/api/export/xlsx',
+      path: '/api/export/txt',
       input: z.object({ date: z.string().optional() }).optional(),
       responses: {
         200: z.any(), // File download
